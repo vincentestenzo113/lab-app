@@ -6,6 +6,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -22,16 +23,21 @@ const Register = () => {
     }
 
     try {
-      // 1. Sign up with Supabase Auth without email verification
+      // Check if student ID already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('student_id', studentId)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Student ID already registered');
+      }
+
+      // 1. Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            email: email
-          }
-        }
       });
 
       if (authError) throw authError;
@@ -43,6 +49,7 @@ const Register = () => {
           {
             id: authData.user.id,
             email: email,
+            student_id: studentId,
             role: 'user',
             is_active: true
           }
@@ -50,15 +57,6 @@ const Register = () => {
 
       if (insertError) throw insertError;
 
-      // 3. Immediately sign in the user
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) throw signInError;
-
-      // 4. Success - redirect to login
       navigate('/login');
       alert('Registration successful! You can now login.');
     } catch (error) {
@@ -86,6 +84,21 @@ const Register = () => {
           
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
+              <label htmlFor="student-id" className="sr-only">
+                Student ID
+              </label>
+              <input
+                id="student-id"
+                name="student-id"
+                type="text"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Student ID"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+              />
+            </div>
+            <div>
               <label htmlFor="email-address" className="sr-only">
                 Email address
               </label>
@@ -94,7 +107,7 @@ const Register = () => {
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

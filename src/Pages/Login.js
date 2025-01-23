@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../Pages/supabaseClient';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,35 +15,45 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // 1. Sign in with Supabase Auth
+      // 1. Get email using student ID
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('student_id', studentId)
+        .single();
+
+      if (userError) throw new Error('Student ID not found');
+
+      // 2. Sign in with Supabase Auth using email
       const { data: { user, session }, error: authError } = 
         await supabase.auth.signInWithPassword({
-          email,
+          email: userData.email,
           password,
         });
 
       if (authError) throw authError;
 
-      // 2. Get user role from users table
-      const { data: userData, error: userError } = await supabase
+      // 3. Get user role from users table
+      const { data: roleData, error: roleError } = await supabase
         .from('users')
         .select('role, is_active')
         .eq('id', user.id)
         .single();
 
-      if (userError) throw userError;
+      if (roleError) throw roleError;
 
-      if (!userData.is_active) {
+      if (!roleData.is_active) {
         throw new Error('Account is deactivated. Please contact admin.');
       }
 
-      // 3. Store session data
+      // 4. Store session data
       localStorage.setItem('token', session.access_token);
       localStorage.setItem('userId', user.id);
-      localStorage.setItem('userRole', userData.role);
+      localStorage.setItem('userRole', roleData.role);
+      localStorage.setItem('studentId', studentId);
 
-      // 4. Redirect based on role
-      if (userData.role === 'admin') {
+      // 5. Redirect based on role
+      if (roleData.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/user');
@@ -76,18 +86,18 @@ const Login = () => {
           
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
+              <label htmlFor="student-id" className="sr-only">
+                Student ID
               </label>
               <input
-                id="email-address"
-                name="email"
-                type="email"
+                id="student-id"
+                name="student-id"
+                type="text"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Student ID"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
               />
             </div>
             <div>
