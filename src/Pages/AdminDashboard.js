@@ -11,12 +11,6 @@ const AdminDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState(null);
 
-  // Form states for laboratory management
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [room, setRoom] = useState('');
-  
   // Form states for user management
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +41,7 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from('reservations')
-        .select('*')
+        .select('*, users(student_id)')
         .order('date', { ascending: true });
       if (error) throw error;
       setSchedules(data);
@@ -73,7 +67,7 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from('reservations')
-        .select('*, users(*)')
+        .select('*, users(student_id)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setReservationHistory(data);
@@ -92,35 +86,6 @@ const AdminDashboard = () => {
       setLogs(data);
     } catch (error) {
       setError('Error fetching logs: ' + error.message);
-    }
-  };
-
-  // Laboratory Management Functions
-  const handleLabAvailability = async (e) => {
-    e.preventDefault();
-    try {
-      // Calculate end time (1 hour after start time)
-      const [hours, minutes] = startTime.split(':');
-      const startDate = new Date();
-      startDate.setHours(parseInt(hours), parseInt(minutes), 0);
-      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
-      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-
-      const { error } = await supabase
-        .from('lab_availability')
-        .upsert([
-          {
-            date,
-            start_time: startTime,
-            end_time: endTime,
-            room: 'Laboratory' // Default room name
-          }
-        ]);
-      if (error) throw error;
-      fetchSchedules();
-      resetForm();
-    } catch (error) {
-      setError('Error updating lab availability: ' + error.message);
     }
   };
 
@@ -194,10 +159,6 @@ const AdminDashboard = () => {
   };
 
   const resetForm = () => {
-    setDate('');
-    setStartTime('');
-    setEndTime('');
-    setRoom('');
     setUsername('');
     setPassword('');
     setSelectedUser(null);
@@ -326,31 +287,33 @@ const AdminDashboard = () => {
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveView('dashboard')}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className={`px-4 py-2 rounded text-white ${
+            activeView === 'dashboard' ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'
+          }`}
         >
           Dashboard
         </button>
         <button
           onClick={() => setActiveView('reservationHistory')}
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          className={`px-4 py-2 rounded text-white ${
+            activeView === 'reservationHistory' ? 'bg-green-600' : 'bg-green-500 hover:bg-green-600'
+          }`}
         >
           Reservation History
         </button>
         <button
-          onClick={() => setActiveView('labManagement')}
-          className="bg-purple-500 text-white px-4 py-2 rounded"
-        >
-          Manage Laboratory
-        </button>
-        <button
           onClick={() => setActiveView('userManagement')}
-          className="bg-yellow-500 text-white px-4 py-2 rounded"
+          className={`px-4 py-2 rounded text-white ${
+            activeView === 'userManagement' ? 'bg-yellow-600' : 'bg-yellow-500 hover:bg-yellow-600'
+          }`}
         >
           Manage Users
         </button>
         <button
           onClick={() => setActiveView('logs')}
-          className="bg-gray-500 text-white px-4 py-2 rounded"
+          className={`px-4 py-2 rounded text-white ${
+            activeView === 'logs' ? 'bg-gray-600' : 'bg-gray-500 hover:bg-gray-600'
+          }`}
         >
           View Logs
         </button>
@@ -371,7 +334,7 @@ const AdminDashboard = () => {
               <div key={schedule.id} className="border rounded-lg p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-semibold">Room: {schedule.room}</p>
+                    <p className="font-semibold">Reserved by: {schedule.users?.student_id}</p>
                     <p>Date: {schedule.date}</p>
                     <p>Time: {schedule.start_time} - {schedule.end_time}</p>
                     <p className={`font-medium ${getStatusColor(schedule.status)}`}>
@@ -418,31 +381,14 @@ const AdminDashboard = () => {
               <div key={reservation.id} className="border rounded-lg p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-semibold">User: {reservation.users?.email}</p>
-                    <p>Room: {reservation.room}</p>
+                    <p className="font-semibold">Reserved by: {reservation.users?.student_id}</p>
                     <p>Date: {reservation.date}</p>
                     <p>Time: {reservation.start_time} - {reservation.end_time}</p>
                     <p className={`font-medium ${getStatusColor(reservation.status)}`}>
                       Status: {reservation.status}
                     </p>
                   </div>
-                  <div className="space-x-2">
-                    {reservation.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleAcceptReservation(reservation.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleDeclineReservation(reservation.id)}
-                          className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-                        >
-                          Decline
-                        </button>
-                      </>
-                    )}
+                  <div>
                     <button
                       onClick={() => handleDeleteReservation(reservation.id)}
                       className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
@@ -457,73 +403,10 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Laboratory Management */}
-      {activeView === 'labManagement' && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Manage Laboratory Availability</h2>
-          <form onSubmit={handleLabAvailability} className="space-y-4">
-            <div>
-              <label className="block mb-1">Date:</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1">Start Time:</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Save Changes
-            </button>
-          </form>
-        </div>
-      )}
-
       {/* User Management */}
       {activeView === 'userManagement' && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Manage Users</h2>
-          <form onSubmit={selectedUser ? () => handleUpdateAccount(selectedUser.id) : handleAddAccount} className="space-y-4">
-            <div>
-              <label className="block mb-1">Username/Email:</label>
-              <input
-                type="email"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1">Password:</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              {selectedUser ? 'Update Account' : 'Add Account'}
-            </button>
-          </form>
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-4">User List</h3>
