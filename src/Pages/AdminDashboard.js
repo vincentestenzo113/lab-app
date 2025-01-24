@@ -20,6 +20,7 @@ const AdminDashboard = () => {
   
   // Form states for user management
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -221,18 +222,51 @@ const AdminDashboard = () => {
   };
 
   // User Management Functions
-  const handleAddAccount = async (e) => {
+  const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.auth.signUp({
-        email: username,
-        password: password,
+      // Check if username already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('student_id', username)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Username already exists');
+      }
+
+      // Create auth account with email and password
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
       });
-      if (error) throw error;
+
+      if (authError) throw authError;
+
+      // Insert new user with username in student_id
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            student_id: username,
+            email: email,
+            is_active: true,
+            role: 'user'
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      // Reset form and refresh user list
+      setUsername('');
+      setEmail('');
+      setPassword('');
       fetchUsers();
-      resetForm();
+      alert('User added successfully!');
     } catch (error) {
-      setError('Error creating account: ' + error.message);
+      setError(error.message);
     }
   };
 
@@ -295,6 +329,7 @@ const AdminDashboard = () => {
     setEndTime('');
     setRoom('');
     setUsername('');
+    setEmail('');
     setPassword('');
     setSelectedUser(null);
   };
@@ -632,51 +667,61 @@ const AdminDashboard = () => {
       {activeView === 'userManagement' && (
         <div className='main-container'>
           <h2>Manage Users</h2>
-          <form onSubmit={selectedUser ? () => handleUpdateAccount(selectedUser.id) : handleAddAccount}>
-            <div className='make-container'>
-            <div>
-              <label>Username/Email:</label>
-              <input
-                type="email"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label>Password:</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-            >
-              {selectedUser ? 'Update Account' : 'Add Account'}
-            </button>
-            </div>
-          </form>
+          
+          {/* Add User Form */}
+          <div className='make-container'>
+            <h3>Add New User</h3>
+            <form onSubmit={handleAddUser}>
+              <div>
+                <label>Username:</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label>Email:</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label>Password:</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit">
+                Add User
+              </button>
+            </form>
+          </div>
 
+          {/* User List */}
           <div>
             <h3>User List</h3>
             <div className='box-container'>
               {users.map((user) => (
                 <div key={user.id}>
-                  <p>Email: {user.email}</p>
-                  <p>Status: {user.is_active ? 'Active' : 'Inactive'}</p>
+                  <div>
+                    <p>Username: {user.student_id}</p>
+                    <p>
+                      Status: {user.is_active ? 'Active' : 'Inactive'}
+                    </p>
+                  </div>
                   <div className='admin-button'>
-                    <button
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      Edit
-                    </button>
                     <button
                       onClick={() => handleDeactivateAccount(user.id)}
                     >
-                      Deactivate
+                      {user.is_active ? 'Deactivate' : 'Activate'}
                     </button>
                   </div>
                 </div>
