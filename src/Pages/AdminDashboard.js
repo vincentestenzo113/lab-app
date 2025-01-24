@@ -592,7 +592,7 @@ const AdminDashboard = () => {
               <div key={reservation.id}>
                 <div>
                   <div>
-                    <p>User: {reservation.users?.email}</p>
+                    <p>User: {reservation.users?.student_id}</p>
                     <p>Room: {reservation.room}</p>
                     <p>Date: {reservation.date}</p>
                     <p>Time: {reservation.start_time} - {reservation.end_time}</p>
