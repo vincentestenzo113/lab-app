@@ -669,9 +669,10 @@ const AdminDashboard = () => {
           <h2>Manage Users</h2>
           
           {/* Add User Form */}
-          <div className='make-container'>
+          
             <h3>Add New User</h3>
             <form onSubmit={handleAddUser}>
+            <div className='make-container'>
               <div>
                 <label>Username:</label>
                 <input
@@ -702,9 +703,9 @@ const AdminDashboard = () => {
               <button type="submit">
                 Add User
               </button>
+              </div>
             </form>
-          </div>
-
+        
           {/* User List */}
           <div>
             <h3>User List</h3>
