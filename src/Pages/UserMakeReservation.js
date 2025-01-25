@@ -62,8 +62,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
       const { data: existingReservations, error: fetchError } = await supabase
         .from("reservations")
         .select("date, start_time, room, status") // Fetch status to check for cancellations
-        .eq("date", date)
-        .eq("user_id", userId); // Check for the specific user
+        .eq("date", date); // Check for all users on the specific date
 
       if (fetchError) throw fetchError;
 
@@ -93,7 +92,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
       });
 
       if (isReserved) {
-        setError("You already have a reservation for this date and time. Please choose another time or room.");
+        setError("This time slot is already reserved by another user. Please choose another time or room.");
         return;
       }
 
