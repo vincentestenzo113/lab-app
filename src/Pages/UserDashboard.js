@@ -254,20 +254,23 @@ const UserDashboard = () => {
           ))}
           
           {calendar.map((day, index) => {
-            // Find reservations for the current day for the logged-in user
             const userId = localStorage.getItem("userId"); // Get the logged-in user's ID
             const reservationsForDay = myReservations.filter(
-              (reservation) => reservation.date === day.date && reservation.user_id === userId
+              (reservation) => reservation.date === day.date
             );
 
             const morningReservation = reservationsForDay.find(
-              (reservation) => reservation.status === 'morning'
+              (reservation) => reservation.status === 'morning' && reservation.user_id === userId
             );
             const afternoonReservation = reservationsForDay.find(
-              (reservation) => reservation.status === 'afternoon'
+              (reservation) => reservation.status === 'afternoon' && reservation.user_id === userId
             );
             const cancelledReservation = reservationsForDay.find(
-              (reservation) => reservation.status === 'cancelled'
+              (reservation) => reservation.status === 'cancelled' && reservation.user_id === userId
+            );
+
+            const hasOtherUserReservations = reservationsForDay.some(
+              (reservation) => reservation.user_id !== userId
             );
 
             const reservationTimes = reservationsForDay.map(reservation => 
@@ -295,7 +298,7 @@ const UserDashboard = () => {
                 key={index}
                 onClick={() => day.date && handleDayClick(day.date)}
                 style={{
-                  backgroundColor: getStatusColor(day.status),
+                  backgroundColor: hasOtherUserReservations ? 'gray' : getStatusColor(day.status),
                   padding: '10px',
                   border: '1px solid #ccc',
                   textAlign: 'center',

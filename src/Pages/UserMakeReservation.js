@@ -87,8 +87,8 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
       const isReserved = existingReservations.some(reservation => {
         const reservationStartTime = new Date(`${date}T${reservation.start_time}`);
         const reservationEndTime = new Date(reservationStartTime.getTime() + 60 * 60 * 1000); // 1 hour duration
-        // Check for overlapping reservations
-        return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime && reservation.status !== 'cancelled');
+        // Check for overlapping reservations in the same room
+        return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime && reservation.status !== 'cancelled' && reservation.room === room);
       });
 
       if (isReserved) {
