@@ -25,7 +25,8 @@ const UserReservation = () => {
         .eq("user_id", userId);
 
       if (error) throw error;
-      setMyReservations(data || []);
+      // Sort reservations by id in ascending order
+      setMyReservations((data || []).sort((a, b) => a.id - b.id));
     } catch (error) {
       setError(error.message);
     }
@@ -135,17 +136,20 @@ const UserReservation = () => {
                   <p>
                     Time: {reservation.start_time} - {reservation.end_time}
                   </p>
-                  <p
-                    style={{
-                      color: reservation.status === "accepted" ? "gold" : reservation.status === "cancelled" ? "black" : "white",
-                    }}
-                  >
-                    Status: {reservation.status}
+                  <p>
+                    Status:  
+                    <p
+                      style={{
+                        color: reservation.status === "morning" ? "orange" : reservation.status === "afternoon" ? "yellow" : "gray",
+                      }}
+                    >
+                      {reservation.status.toUpperCase()}
+                    </p>
                   </p>
                 </div>
-                {reservation.status === "pending" && (
+                {reservation.status !== "cancelled" && (
                   <button onClick={() => handleCancelReservation(reservation.id)}>
-                    Cancel
+                    Cancel Reservation
                   </button>
                 )}
               </div>

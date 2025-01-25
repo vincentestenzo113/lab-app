@@ -5,6 +5,7 @@ import UserMakeReservation from "./UserMakeReservation";
 import UserReservation from "./UserReservation";
 import profile from './images/profile.jpg';
 import logo from './images/logo.png';
+import { IoCheckmarkSharp, IoCheckmarkDoneSharp, IoClose } from 'react-icons/io5';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ const UserDashboard = () => {
 
   const [userProfile, setUserProfile] = useState({ name: '', profilePicture: '' });
 
+  const [tooltip, setTooltip] = useState({ visible: false, content: '' });
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+
   useEffect(() => {
     fetchUserData();
     fetchUserProfile();
@@ -37,11 +41,9 @@ const UserDashboard = () => {
 
   const fetchReservations = async () => {
     try {
-      const userId = localStorage.getItem("userId");
       const { data, error } = await supabase
         .from("reservations")
-        .select("*")
-        .eq("user_id", userId);
+        .select("*");
 
       if (error) throw error;
       setMyReservations(data || []);
@@ -162,20 +164,27 @@ const UserDashboard = () => {
       const date = new Date(year, month, i);
       const formattedDate = date.toISOString().split('T')[0];
 
-      const reservation = myReservations.find(
-        (reservation) => reservation.date === formattedDate
+      const userId = localStorage.getItem("userId");
+      const reservationsForDay = myReservations.filter(
+        (reservation) => reservation.date === formattedDate && reservation.user_id === userId
       );
 
-      const morningReservation = myReservations.find(
-        (reservation) => reservation.date === formattedDate && reservation.status === 'morning'
+      const morningReservation = reservationsForDay.find(
+        (reservation) => reservation.status === 'morning'
       );
-      const afternoonReservation = myReservations.find(
-        (reservation) => reservation.date === formattedDate && reservation.status === 'afternoon'
+      const afternoonReservation = reservationsForDay.find(
+        (reservation) => reservation.status === 'afternoon'
+      );
+      const cancelledReservation = reservationsForDay.find(
+        (reservation) => reservation.status === 'cancelled'
       );
 
+      // Update status logic to prioritize reserved over cancelled
       calendarDays.push({
         date: formattedDate,
-        status: morningReservation && afternoonReservation ? 'red' : (afternoonReservation ? 'afternoon' : (morningReservation ? 'morning' : 'empty')),
+        status: (morningReservation || afternoonReservation) ? 
+          (morningReservation && afternoonReservation ? 'red' : (afternoonReservation ? 'afternoon' : 'morning')) : 
+          (cancelledReservation ? 'empty' : 'empty'),
       });
     }
 
@@ -193,7 +202,7 @@ const UserDashboard = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'morning':
-        return 'green';
+        return 'orange';
       case 'afternoon':
         return 'yellow';
       case 'red':
@@ -215,6 +224,16 @@ const UserDashboard = () => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(currentMonth.getMonth() + 1);
     setCurrentMonth(newDate);
+  };
+
+  const handleMouseEnter = (event, content) => {
+    setTooltip({ visible: true, content });
+    // Set tooltip position based on mouse coordinates
+    setTooltipPosition({ top: event.clientY, left: event.clientX });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip({ visible: false, content: '' });
   };
 
   return (
@@ -267,10 +286,22 @@ const UserDashboard = () => {
             </div>
           ))}
           {calendar.map((day, index) => {
-            // Find reservations for the current day
+            // Find reservations for the current day for the logged-in user
+            const userId = localStorage.getItem("userId"); // Get the logged-in user's ID
             const reservationsForDay = myReservations.filter(
-              (reservation) => reservation.date === day.date
+              (reservation) => reservation.date === day.date && reservation.user_id === userId // Filter by user ID
             );
+
+            const morningReservation = reservationsForDay.find(
+              (reservation) => reservation.status === 'morning'
+            );
+            const afternoonReservation = reservationsForDay.find(
+              (reservation) => reservation.status === 'afternoon'
+            );
+            const cancelledReservation = reservationsForDay.find(
+              (reservation) => reservation.status === 'cancelled'
+            );
+
             const reservationTimes = reservationsForDay.map(reservation => 
               `${reservation.start_time} - ${reservation.end_time}`
             ).join(', '); // Join times for tooltip
@@ -283,10 +314,42 @@ const UserDashboard = () => {
                   padding: '10px',
                   border: '1px solid #ccc',
                   textAlign: 'center',
+                  position: 'relative', // Set position relative for absolute positioning of icons
                 }}
-                title={reservationTimes || 'No reservations'} // Show times on hover
+                title={reservationTimes.length > 0 ? `Reservations: ${reservationTimes}` : 'No reservations'} // Show times on hover
+                onMouseEnter={(event) => handleMouseEnter(event, reservationTimes)}
+                onMouseLeave={handleMouseLeave}
               >
                 {day.date ? new Date(day.date).getDate() : ''}
+                {/* Conditional rendering of icons */}
+                {cancelledReservation ? (
+                  <IoClose style={{ 
+                    position: 'absolute', 
+                    right: '0', 
+                    bottom: '0', 
+                    margin: '1px', 
+                    fontSize: '1em', // Make it smaller
+                    color: 'red' // Set color to red
+                  }} />
+                ) : morningReservation && afternoonReservation ? (
+                  <IoCheckmarkDoneSharp style={{ 
+                    position: 'absolute', 
+                    right: '0', 
+                    bottom: '0', 
+                    margin: '1px', 
+                    fontSize: '1em', // Make it smaller
+                    color: 'green' 
+                  }} />
+                ) : morningReservation || afternoonReservation ? (
+                  <IoCheckmarkSharp style={{ 
+                    position: 'absolute', 
+                    right: '0', 
+                    bottom: '0', 
+                    margin: '1px', 
+                    fontSize: '1em', // Make it smaller
+                    color: 'green' 
+                  }} />
+                ) : null}
               </div>
             );
           })}
@@ -301,13 +364,19 @@ const UserDashboard = () => {
         </div>
         <div>
           <p>Color code Reservation:</p>
+          <p style={{ color: 'orange' }}>Orange - Morning</p>
           <p style={{ color: 'yellow' }}>Yellow - Afternoon</p>
-          <p style={{ color: 'green' }}>Green - Morning</p>
           <p style={{ color: 'red' }}>Red - Whole Day</p>
           <p style={{ color: 'white' }}>White - Available</p>
         </div>
         </div>
       </div>
+
+      {tooltip.visible && (
+        <div className="tooltip" style={{ position: 'absolute', top: tooltipPosition.top, left: tooltipPosition.left, backgroundColor: 'rgba(0, 0, 0, 0.7)', color: 'white', padding: '5px', borderRadius: '5px' }}>
+          {tooltip.content}
+        </div>
+      )}
     </div>
   );
 };
