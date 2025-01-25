@@ -32,6 +32,14 @@ const AdminDashboard = () => {
   const [myReservations, setMyReservations] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
 
+  const [currentUserPage, setCurrentUserPage] = useState(1);
+  const [usersPerPage] = useState(10); // Set the number of users per page
+  const [currentReservationPage, setCurrentReservationPage] = useState(1);
+  const [reservationsPerPage] = useState(10); // Set the number of reservations per page
+
+  const [currentLogPage, setCurrentLogPage] = useState(1);
+  const [logsPerPage] = useState(10); // Set the number of logs per page
+
   useEffect(() => {
     fetchUserData();
     generateCalendar();
@@ -185,7 +193,13 @@ const AdminDashboard = () => {
         .from('logs')
         .select('*')
         .order('created_at', { ascending: false });
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error fetching logs:', error);
+        throw error;
+      }
+
+      console.log('Fetched logs:', data);
       setLogs(data);
     } catch (error) {
       setError('Error fetching logs: ' + error.message);
@@ -494,6 +508,26 @@ const AdminDashboard = () => {
     setCurrentMonth(newDate);
   };
 
+  // Calculate the current users to display
+  const indexOfLastUser = currentUserPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+
+  // Calculate the current reservations to display
+  const indexOfLastReservation = currentReservationPage * reservationsPerPage;
+  const indexOfFirstReservation = indexOfLastReservation - reservationsPerPage;
+  const currentReservations = reservationHistory.slice(indexOfFirstReservation, indexOfLastReservation);
+
+  // Calculate the current logs to display
+  const indexOfLastLog = currentLogPage * logsPerPage;
+  const indexOfFirstLog = indexOfLastLog - logsPerPage;
+
+  // Filter logs to only show "CREATE RESERVATION"
+  const filteredLogs = logs.filter(log => log.message === "CREATE RESERVATION");
+  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
+
+  console.log('Current Logs:', currentLogs); // Log the current logs being rendered
+
   return (
     <div className='main'>
 
@@ -588,7 +622,7 @@ const AdminDashboard = () => {
         <div className='main-container'>
           <h2>Reservation History</h2>
           <div className='box-container'>
-            {reservationHistory.map((reservation) => (
+            {currentReservations.map((reservation) => (
               <div key={reservation.id}>
                 <div>
                   <div>
@@ -624,6 +658,11 @@ const AdminDashboard = () => {
                 </div>
               </div>
             ))}
+          </div>
+          {/* Pagination Controls */}
+          <div class="history-button">
+            <button onClick={() => setCurrentReservationPage(currentReservationPage - 1)} disabled={currentReservationPage === 1}>Previous</button>
+            <button onClick={() => setCurrentReservationPage(currentReservationPage + 1)} disabled={indexOfLastReservation >= reservationHistory.length}>Next</button>
           </div>
         </div>
       )}
@@ -710,7 +749,7 @@ const AdminDashboard = () => {
           <div>
             <h3>User List</h3>
             <div className='box-container'>
-              {users.map((user) => (
+              {currentUsers.map((user) => (
                 <div key={user.id}>
                   <div>
                     <p>Username: {user.student_id}</p>
@@ -728,6 +767,11 @@ const AdminDashboard = () => {
                 </div>
               ))}
             </div>
+            {/* Pagination Controls */}
+            <div class="history-button">
+              <button onClick={() => setCurrentUserPage(currentUserPage - 1)} disabled={currentUserPage === 1}>Previous</button>
+              <button onClick={() => setCurrentUserPage(currentUserPage + 1)} disabled={indexOfLastUser >= users.length}>Next</button>
+            </div>
           </div>
         </div>
       )}
@@ -736,19 +780,22 @@ const AdminDashboard = () => {
       {activeView === 'logs' && (
         <div className='main-container'>
           <h2>System Logs</h2>
+          <div className='box-container'>
+            {currentLogs.length > 0 ? (
+              currentLogs.map((log) => (
+                <div key={log.id}>
+                  <p>Message: {log.message}</p>
+                  <p>Timestamp: {new Date().toLocaleString()}</p>
+                </div>
+              ))
+            ) : (
+              <p>No logs available.</p>
+            )}
+          </div>
+          {/* Pagination Controls */}
           <div>
-            {logs.map((log) => (
-              <div key={log.id}>
-                <p>Action: {log.action}</p>
-                <p>Timestamp: {new Date(log.created_at).toLocaleString()}</p>
-                <p>User: {log.user_email}</p>
-                <button
-                  onClick={() => handleDeleteLog(log.id)}
-                >
-                  Delete Log
-                </button>
-              </div>
-            ))}
+            <button onClick={() => setCurrentLogPage(currentLogPage - 1)} disabled={currentLogPage === 1}>Previous</button>
+            <button onClick={() => setCurrentLogPage(currentLogPage + 1)} disabled={indexOfLastLog >= filteredLogs.length}>Next</button>
           </div>
         </div>
       )}

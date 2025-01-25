@@ -390,3 +390,32 @@
 .admin-button button:hover {
   background-color: #ffdf7e;
 }
+
+.history-button button{
+  background-color: #febd00;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.history-button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  
+}
+
+.history-button button{
+  background-color: #febd00;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.history-button button{
+  background-color: #febd00;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.history-button button:hover{
+  background-color: #ffdf7e;
+}
