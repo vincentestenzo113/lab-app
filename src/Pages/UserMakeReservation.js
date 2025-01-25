@@ -9,7 +9,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState({ student_id: "" });
-  const [room, setRoom] = useState("Room 1");
+  const [room, setRoom] = useState(1);
 
   const navigate = useNavigate();
 
@@ -58,38 +58,14 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
     try {
       const userId = localStorage.getItem("userId");
 
-      // Fetch existing reservations for the selected date
+      // Fetch existing reservations for the selected date and room
       const { data: existingReservations, error: fetchError } = await supabase
         .from("reservations")
-        .select("*")
-        .eq("date", date);
+        .select("date, start_time, room, status") // Fetch status to check for cancellations
+        .eq("date", date)
+        .eq("user_id", userId); // Check for the specific user
 
       if (fetchError) throw fetchError;
-
-      // Check for existing reservation with status 'cancelled'
-      const existingReservation = existingReservations.find(reservation => reservation.start_time === startTime);
-      
-      if (existingReservation) {
-        // Update the reservation regardless of its status
-        const { error: updateError } = await supabase
-          .from("reservations")
-          .update({
-            user_id: userId,
-            date,
-            start_time: startTime,
-            end_time: endTime,
-            room: room,
-            status: startTime === "08:00" ? "morning" : "afternoon",
-          })
-          .eq("id", existingReservation.id); // Assuming 'id' is the primary key
-
-        if (updateError) throw updateError;
-
-        alert("Reservation updated successfully!");
-        setDate("");
-        setStartTime("");
-        return;
-      }
 
       // Determine selected start time and end time based on user choice
       let selectedStartTime;
@@ -112,12 +88,12 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
       const isReserved = existingReservations.some(reservation => {
         const reservationStartTime = new Date(`${date}T${reservation.start_time}`);
         const reservationEndTime = new Date(reservationStartTime.getTime() + 60 * 60 * 1000); // 1 hour duration
-        // Allow reserving if the existing reservation is cancelled
+        // Check for overlapping reservations
         return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime && reservation.status !== 'cancelled');
       });
 
       if (isReserved) {
-        setError("The selected time is already reserved. Please choose another time.");
+        setError("You already have a reservation for this date and time. Please choose another time or room.");
         return;
       }
 

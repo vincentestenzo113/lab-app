@@ -400,8 +400,8 @@ const UserDashboard = () => {
                       fontSize: '1em',
                       color: 'red'
                     }} />
-                    {cancelledReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', right: '20px', bottom: '0', color: 'blue' }} />}
-                    {cancelledReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', right: '20px', bottom: '0', color: 'blue' }} />}
+                    {cancelledReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {cancelledReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
                   </div>
                 ) : null}
               </div>
