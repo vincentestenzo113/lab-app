@@ -1,50 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../Pages/supabaseClient";
-import UserMakeReservation from "./UserMakeReservation";
-import UserReservation from "./UserReservation";
 import profile from './images/profile.jpg';
 import logo from './images/logo.png';
 
-const UserDashboard = () => {
+const Calendar = () => {
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState("dashboard");
-  const [reservations, setReservations] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [error, setError] = useState(null);
   const [myReservations, setMyReservations] = useState([]);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [confirmationStep, setConfirmationStep] = useState(false);
-
-  // Form states
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
 
   const [calendar, setCalendar] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [userProfile, setUserProfile] = useState({ name: '', profilePicture: '' });
+  const [tooltip, setTooltip] = useState({ visible: false, content: '', position: { top: 0, left: 0 } });
+  const [allReservations, setAllReservations] = useState([]);
 
   useEffect(() => {
     fetchUserData();
+    generateCalendar();
     fetchUserProfile();
   }, [currentMonth]);
 
   const fetchUserData = async () => {
     await Promise.all([fetchReservations(), fetchAvailableSlots()]);
-    generateCalendar();
   };
 
   const fetchReservations = async () => {
     try {
-      const userId = localStorage.getItem("userId");
       const { data, error } = await supabase
         .from("reservations")
-        .select("*")
-        .eq("user_id", userId);
+        .select("*");
 
       if (error) throw error;
-      setMyReservations(data || []);
+      setAllReservations(data || []);
       generateCalendar();
     } catch (error) {
       setError(error.message);
@@ -148,6 +139,7 @@ const UserDashboard = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const calendarDays = [];
+    const userId = localStorage.getItem("userId");
 
     // Adjust the start of the week to Monday
     const adjustedFirstDay = (firstDayOfMonth + 6) % 7;
@@ -162,20 +154,13 @@ const UserDashboard = () => {
       const date = new Date(year, month, i);
       const formattedDate = date.toISOString().split('T')[0];
 
-      const reservation = myReservations.find(
+      const reservation = allReservations.find(
         (reservation) => reservation.date === formattedDate
-      );
-
-      const morningReservation = myReservations.find(
-        (reservation) => reservation.date === formattedDate && reservation.status === 'morning'
-      );
-      const afternoonReservation = myReservations.find(
-        (reservation) => reservation.date === formattedDate && reservation.status === 'afternoon'
       );
 
       calendarDays.push({
         date: formattedDate,
-        status: morningReservation && afternoonReservation ? 'red' : (afternoonReservation ? 'afternoon' : (morningReservation ? 'morning' : 'empty')),
+        status: reservation ? (reservation.user_id === userId ? 'reserved' : (reservation.status === 'pending' ? 'pending' : 'other_reserved')) : 'available',
       });
     }
 
@@ -192,12 +177,12 @@ const UserDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'morning':
-        return 'green';
-      case 'afternoon':
-        return 'yellow';
-      case 'red':
+      case 'other_reserved':
         return 'red';
+      case 'reserved':
+        return 'green';
+      case 'pending':
+        return 'yellow';
       case 'empty':
         return 'white';
       default:
@@ -215,6 +200,35 @@ const UserDashboard = () => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(currentMonth.getMonth() + 1);
     setCurrentMonth(newDate);
+  };
+
+  const handleDayClick = (day) => {
+    const reservation = myReservations.find(res => res.date === day.date);
+    if (reservation) {
+      alert(`Reservation Time: ${reservation.start_time} - ${reservation.end_time}`);
+    } else {
+      alert('No reservation for this day.');
+    }
+  };
+
+  const getReservationTime = (date) => {
+    const reservation = myReservations.find(res => res.date === date);
+    return reservation ? `${reservation.start_time} - ${reservation.end_time}` : '';
+  };
+
+  const handleDayMouseEnter = (day, event) => {
+    const reservation = allReservations.find(res => res.date === day.date);
+    if (reservation) {
+      setTooltip({
+        visible: true,
+        content: `${reservation.start_time} - ${reservation.end_time}`,
+        position: { top: event.clientY + 10, left: event.clientX + 10 }
+      });
+    }
+  };
+
+  const handleDayMouseLeave = () => {
+    setTooltip({ ...tooltip, visible: false });
   };
 
   return (
@@ -266,31 +280,44 @@ const UserDashboard = () => {
               {day}
             </div>
           ))}
-          {calendar.map((day, index) => {
-            // Find reservations for the current day
-            const reservationsForDay = myReservations.filter(
-              (reservation) => reservation.date === day.date
-            );
-            const reservationTimes = reservationsForDay.map(reservation => 
-              `${reservation.start_time} - ${reservation.end_time}`
-            ).join(', '); // Join times for tooltip
-
-            return (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: getStatusColor(day.status),
-                  padding: '10px',
-                  border: '1px solid #ccc',
-                  textAlign: 'center',
-                }}
-                title={reservationTimes || 'No reservations'} // Show times on hover
-              >
-                {day.date ? new Date(day.date).getDate() : ''}
-              </div>
-            );
-          })}
+          {calendar.map((day, index) => (
+            <div
+              key={index}
+              onMouseEnter={(event) => handleDayMouseEnter(day, event)}
+              onMouseLeave={handleDayMouseLeave}
+              style={{
+                backgroundColor: getStatusColor(day.status),
+                padding: '10px',
+                border: '1px solid #ccc',
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              {day.date ? (
+                <>
+                  {new Date(day.date).getDate()}
+                  {day.status === 'reserved' && (
+                    <div>{getReservationTime(day.date)}</div>
+                  )}
+                </>
+              ) : ''}
+            </div>
+          ))}
         </div>
+        {tooltip.visible && (
+          <div style={{
+            position: 'absolute',
+            top: tooltip.position.top,
+            left: tooltip.position.left,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '5px',
+            borderRadius: '5px',
+            zIndex: 1000,
+          }}>
+            {tooltip.content}
+          </div>
+        )}
         <div className="bottom-container">
         <div className="month-button">
           <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
@@ -300,10 +327,10 @@ const UserDashboard = () => {
           </div>
         </div>
         <div>
-          <p>Color code Reservation:</p>
-          <p style={{ color: 'yellow' }}>Yellow - Afternoon</p>
-          <p style={{ color: 'green' }}>Green - Morning</p>
-          <p style={{ color: 'red' }}>Red - Whole Day</p>
+          <p>Color code:</p>
+          <p style={{ color: 'red' }}>Red - Other User's Reservation</p>
+          <p style={{ color: 'green' }}>Green - Current User's Reservation</p>
+          <p style={{ color: 'yellow' }}>Yellow - Pending Reservation</p>
           <p style={{ color: 'white' }}>White - Available</p>
         </div>
         </div>
@@ -312,4 +339,4 @@ const UserDashboard = () => {
   );
 };
 
-export default UserDashboard;
+export default Calendar;
