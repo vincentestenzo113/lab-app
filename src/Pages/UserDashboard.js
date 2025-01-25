@@ -1,25 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../Pages/supabaseClient";
-import UserMakeReservation from "./UserMakeReservation";
-import UserReservation from "./UserReservation";
 import profile from './images/profile.jpg';
 import logo from './images/logo.png';
 import { IoCheckmarkSharp, IoCheckmarkDoneSharp, IoClose } from 'react-icons/io5';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState("dashboard");
-  const [reservations, setReservations] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [error, setError] = useState(null);
   const [myReservations, setMyReservations] = useState([]);
-  const [selectedReservation, setSelectedReservation] = useState(null);
-  const [confirmationStep, setConfirmationStep] = useState(false);
 
   // Form states
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
+
 
   const [calendar, setCalendar] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -97,38 +90,11 @@ const UserDashboard = () => {
         .toString()
         .padStart(2, "0")}:${endDate.getMinutes().toString().padStart(2, "0")}`;
 
-      const { error } = await supabase.from("reservations").insert([
-        {
-          user_id: userId,
-          date,
-          start_time: startTime,
-          end_time: endTime,
-          room: "Laboratory", // Default room name
-          status: "pending",
-        },
-      ]);
 
       if (error) throw error;
 
       fetchUserData();
       alert("Reservation created successfully!");
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-
-  const handleCancelReservation = async (reservationId) => {
-    try {
-      const { error } = await supabase
-        .from("reservations")
-        .update({ status: "cancelled" })
-        .eq("id", reservationId);
-
-      if (error) throw error;
-
-      fetchReservations();
-      setSelectedReservation(null);
-      alert("Reservation cancelled successfully!");
     } catch (error) {
       setError(error.message);
     }
@@ -236,6 +202,14 @@ const UserDashboard = () => {
     setTooltip({ visible: false, content: '' });
   };
 
+  const formatTime = (time) => {
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours);
+    const suffix = hour >= 12 ? 'pm' : 'am';
+    const formattedHour = hour % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${formattedHour}:${minutes} ${suffix}`;
+  };
+
   return (
     <div className="main">
       <div className='logo'> 
@@ -285,11 +259,12 @@ const UserDashboard = () => {
               {day}
             </div>
           ))}
+          
           {calendar.map((day, index) => {
             // Find reservations for the current day for the logged-in user
             const userId = localStorage.getItem("userId"); // Get the logged-in user's ID
             const reservationsForDay = myReservations.filter(
-              (reservation) => reservation.date === day.date && reservation.user_id === userId // Filter by user ID
+              (reservation) => reservation.date === day.date && reservation.user_id === userId
             );
 
             const morningReservation = reservationsForDay.find(
@@ -303,8 +278,24 @@ const UserDashboard = () => {
             );
 
             const reservationTimes = reservationsForDay.map(reservation => 
-              `${reservation.start_time} - ${reservation.end_time}`
+              `${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}`
             ).join(', '); // Join times for tooltip
+
+            // Modify tooltip content based on reservation status
+            let tooltipContent = '';
+            if (morningReservation && afternoonReservation) {
+              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved), ${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show both morning and afternoon times with reserved text
+            } else if (morningReservation && cancelledReservation) {
+              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved)`; // Show morning time with reserved text
+            } else if (afternoonReservation && cancelledReservation) {
+              tooltipContent = `${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show afternoon time with reserved and cancelled text
+            } else if (morningReservation) {
+              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved)`; // Show morning time with reserved text
+            } else if (afternoonReservation) {
+              tooltipContent = `${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show afternoon time with reserved text
+            } else if (cancelledReservation) {
+              tooltipContent = `${formatTime(cancelledReservation.start_time)} - ${formatTime(cancelledReservation.end_time)} (cancelled)`; // Show cancelled time with cancelled text
+            }
 
             return (
               <div
@@ -314,40 +305,89 @@ const UserDashboard = () => {
                   padding: '10px',
                   border: '1px solid #ccc',
                   textAlign: 'center',
-                  position: 'relative', // Set position relative for absolute positioning of icons
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.3s, transform 0.3s, color 0.3s',
+                  color: day.status === 'cancelled' ? 'red' : 'black',
                 }}
-                title={reservationTimes.length > 0 ? `Reservations: ${reservationTimes}` : 'No reservations'} // Show times on hover
-                onMouseEnter={(event) => handleMouseEnter(event, reservationTimes)}
-                onMouseLeave={handleMouseLeave}
+                onMouseEnter={(event) => {
+                  handleMouseEnter(event, tooltipContent); // Use modified tooltip content
+                  event.currentTarget.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
+                  event.currentTarget.style.transform = 'scale(1.05)';
+                  event.currentTarget.style.color = 'black';
+                }}
+                onMouseLeave={(event) => {
+                  handleMouseLeave();
+                  event.currentTarget.style.boxShadow = 'none';
+                  event.currentTarget.style.transform = 'scale(1)';
+                  event.currentTarget.style.color = day.status === 'cancelled' ? 'red' : 'black';
+                }}
               >
                 {day.date ? new Date(day.date).getDate() : ''}
-                {/* Conditional rendering of icons */}
-                {cancelledReservation ? (
-                  <IoClose style={{ 
-                    position: 'absolute', 
-                    right: '0', 
-                    bottom: '0', 
-                    margin: '1px', 
-                    fontSize: '1em', // Make it smaller
-                    color: 'red' // Set color to red
-                  }} />
-                ) : morningReservation && afternoonReservation ? (
+                {morningReservation && afternoonReservation ? (
                   <IoCheckmarkDoneSharp style={{ 
                     position: 'absolute', 
                     right: '0', 
                     bottom: '0', 
                     margin: '1px', 
-                    fontSize: '1em', // Make it smaller
+                    fontSize: '1em',
                     color: 'green' 
                   }} />
+                ) : morningReservation && cancelledReservation ? (
+                  <div>
+                    <IoCheckmarkSharp style={{ 
+                      position: 'absolute', 
+                      right: '10px', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'green' 
+                    }} />
+                    <IoClose style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'red'
+                    }} />
+                  </div>
+                ) : afternoonReservation && cancelledReservation ? (
+                  <div>
+                    <IoClose style={{ 
+                      position: 'absolute', 
+                      right: '10px', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'red'
+                    }} />
+                    <IoCheckmarkSharp style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'green' 
+                    }} />
+                  </div>
                 ) : morningReservation || afternoonReservation ? (
                   <IoCheckmarkSharp style={{ 
                     position: 'absolute', 
                     right: '0', 
                     bottom: '0', 
                     margin: '1px', 
-                    fontSize: '1em', // Make it smaller
+                    fontSize: '1em',
                     color: 'green' 
+                  }} />
+                ) : cancelledReservation ? (
+                  <IoClose style={{ 
+                    position: 'absolute', 
+                    right: '0', 
+                    bottom: '0', 
+                    margin: '1px', 
+                    fontSize: '1em',
+                    color: 'red'
                   }} />
                 ) : null}
               </div>
