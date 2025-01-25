@@ -4,6 +4,7 @@ import { supabase } from "../Pages/supabaseClient";
 import profile from './images/profile.jpg';
 import logo from './images/logo.png';
 import { IoCheckmarkSharp, IoCheckmarkDoneSharp, IoClose } from 'react-icons/io5';
+import { Bs1CircleFill, Bs2CircleFill } from 'react-icons/bs';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const UserDashboard = () => {
   }, [currentMonth]);
 
   const fetchUserData = async () => {
-    await Promise.all([fetchReservations(), fetchAvailableSlots()]);
+    await Promise.all([fetchReservations()]);
     generateCalendar();
   };
 
@@ -46,19 +47,6 @@ const UserDashboard = () => {
     }
   };
 
-  const fetchAvailableSlots = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("lab_availability")
-        .select("*")
-        .eq("is_available", true);
-
-      if (error) throw error;
-      setAvailableSlots(data || []);
-    } catch (error) {
-      setError(error.message);
-    }
-  };
 
   const fetchUserProfile = async () => {
     try {
@@ -331,14 +319,20 @@ const UserDashboard = () => {
               >
                 {day.date ? new Date(day.date).getDate() : ''}
                 {morningReservation && afternoonReservation ? (
-                  <IoCheckmarkDoneSharp style={{ 
-                    position: 'absolute', 
-                    right: '0', 
-                    bottom: '0', 
-                    margin: '1px', 
-                    fontSize: '1em',
-                    color: 'green' 
-                  }} />
+                  <div>
+                    <IoCheckmarkDoneSharp style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'green' 
+                    }} />
+                    {morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                    {afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                  </div>
                 ) : morningReservation && cancelledReservation ? (
                   <div>
                     <IoCheckmarkSharp style={{ 
@@ -357,6 +351,8 @@ const UserDashboard = () => {
                       fontSize: '1em',
                       color: 'red'
                     }} />
+                    {morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
                   </div>
                 ) : afternoonReservation && cancelledReservation ? (
                   <div>
@@ -376,25 +372,37 @@ const UserDashboard = () => {
                       fontSize: '1em',
                       color: 'green' 
                     }} />
+                    {afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
                   </div>
                 ) : morningReservation || afternoonReservation ? (
-                  <IoCheckmarkSharp style={{ 
-                    position: 'absolute', 
-                    right: '0', 
-                    bottom: '0', 
-                    margin: '1px', 
-                    fontSize: '1em',
-                    color: 'green' 
-                  }} />
+                  <div>
+                    {morningReservation && morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {morningReservation && morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {afternoonReservation && afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {afternoonReservation && afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    <IoCheckmarkSharp style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'green' 
+                    }} />
+                  </div>
                 ) : cancelledReservation ? (
-                  <IoClose style={{ 
-                    position: 'absolute', 
-                    right: '0', 
-                    bottom: '0', 
-                    margin: '1px', 
-                    fontSize: '1em',
-                    color: 'red'
-                  }} />
+                  <div>
+                    <IoClose style={{ 
+                      position: 'absolute', 
+                      right: '0', 
+                      bottom: '0', 
+                      margin: '1px', 
+                      fontSize: '1em',
+                      color: 'red'
+                    }} />
+                    {cancelledReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', right: '20px', bottom: '0', color: 'blue' }} />}
+                    {cancelledReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', right: '20px', bottom: '0', color: 'blue' }} />}
+                  </div>
                 ) : null}
               </div>
             );

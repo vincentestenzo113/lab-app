@@ -9,6 +9,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
   const [startTime, setStartTime] = useState("");
   const [error, setError] = useState(null);
   const [userProfile, setUserProfile] = useState({ student_id: "" });
+  const [room, setRoom] = useState("Room 1");
 
   const navigate = useNavigate();
 
@@ -77,7 +78,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
             date,
             start_time: startTime,
             end_time: endTime,
-            room: "Laboratory",
+            room: room,
             status: startTime === "08:00" ? "morning" : "afternoon",
           })
           .eq("id", existingReservation.id); // Assuming 'id' is the primary key
@@ -126,7 +127,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
           date,
           start_time: startTime, // Ensure startTime is set correctly
           end_time: endTime, // Set end time based on selection
-          room: "Laboratory", // Default room name
+          room: room,
           status: startTime === "08:00" ? "morning" : "afternoon", // Set status based on user choice
         },
       ]);
@@ -206,6 +207,17 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
               <option value="" disabled>Select Time</option>
               <option value="08:00">Morning (8 AM - 12 PM)</option>
               <option value="13:00">Afternoon (1 PM - 5 PM)</option>
+            </select>
+          </div>
+          <div>
+            <label>Choose Laboratory</label>
+            <select
+              value={room}
+              onChange={(e) => setRoom(e.target.value)}
+              required
+            >
+              <option value="1">Room 1</option>
+              <option value="2">Room 2</option>
             </select>
           </div>
           <button type="submit">Make Reservation</button>
