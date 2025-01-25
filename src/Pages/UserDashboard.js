@@ -210,6 +210,10 @@ const UserDashboard = () => {
     return `${formattedHour}:${minutes} ${suffix}`;
   };
 
+  const handleDayClick = (date) => {
+    navigate(`/make-reservation?date=${date}`);
+  };
+
   return (
     <div className="main">
       <div className='logo'> 
@@ -253,6 +257,7 @@ const UserDashboard = () => {
       {/* Calendar View */}
       <div className="dashboard-container">
         <h2>Calendar</h2>
+        <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
           {['M', 'T', 'W', 'Th', 'F', 'S', 'Su'].map((day, index) => (
             <div key={index} style={{ textAlign: 'center', fontWeight: 'bold' }}>
@@ -300,6 +305,7 @@ const UserDashboard = () => {
             return (
               <div
                 key={index}
+                onClick={() => day.date && handleDayClick(day.date)}
                 style={{
                   backgroundColor: getStatusColor(day.status),
                   padding: '10px',
@@ -396,7 +402,6 @@ const UserDashboard = () => {
         </div>
         <div className="bottom-container">
         <div className="month-button">
-          <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
           <div>
           <button onClick={handlePreviousMonth}>Previous</button>
           <button onClick={handleNextMonth}>Next</button>

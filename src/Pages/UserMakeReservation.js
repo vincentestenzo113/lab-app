@@ -16,7 +16,6 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
     // Fetch user profile data
     const fetchUserProfile = async () => {
       const userId = localStorage.getItem("userId");
-      // Assuming you have a function to fetch user data
       const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
       if (error) {
         setError(error.message);
@@ -24,6 +23,13 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
         setUserProfile(data);
       }
     };
+
+    // Get date from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateFromUrl = urlParams.get('date');
+    if (dateFromUrl) {
+      setDate(dateFromUrl); // Set the date from URL
+    }
 
     fetchUserProfile();
   }, []);
@@ -59,6 +65,31 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
 
       if (fetchError) throw fetchError;
 
+      // Check for existing reservation with status 'cancelled'
+      const existingReservation = existingReservations.find(reservation => reservation.start_time === startTime);
+      
+      if (existingReservation) {
+        // Update the reservation regardless of its status
+        const { error: updateError } = await supabase
+          .from("reservations")
+          .update({
+            user_id: userId,
+            date,
+            start_time: startTime,
+            end_time: endTime,
+            room: "Laboratory",
+            status: startTime === "08:00" ? "morning" : "afternoon",
+          })
+          .eq("id", existingReservation.id); // Assuming 'id' is the primary key
+
+        if (updateError) throw updateError;
+
+        alert("Reservation updated successfully!");
+        setDate("");
+        setStartTime("");
+        return;
+      }
+
       // Determine selected start time and end time based on user choice
       let selectedStartTime;
       let endTime;
@@ -80,7 +111,8 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
       const isReserved = existingReservations.some(reservation => {
         const reservationStartTime = new Date(`${date}T${reservation.start_time}`);
         const reservationEndTime = new Date(reservationStartTime.getTime() + 60 * 60 * 1000); // 1 hour duration
-        return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime);
+        // Allow reserving if the existing reservation is cancelled
+        return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime && reservation.status !== 'cancelled');
       });
 
       if (isReserved) {
@@ -129,7 +161,6 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
                 </div>
               </div>
         <div className="home-container">
-          {error && <div>{error}</div>}
 
           <div>
             <Link to="/user">
