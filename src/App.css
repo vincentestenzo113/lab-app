@@ -430,3 +430,9 @@
   font-weight: 500;
   margin-bottom: 20px;
 }
+
+.active-button {
+  background-color: #ffcc00; /* Brighter color for active button */
+  color: white; /* Change text color if needed */
+  font-weight: bold; /* Optional: make the text bold */
+}

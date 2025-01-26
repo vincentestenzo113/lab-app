@@ -567,7 +567,7 @@ const AdminDashboard = () => {
     <div className='main'>
 
     <div className='logo'> 
-        <img src={logo}></img>
+        <img src={logo} alt="Logo" />
       </div>
 
       {/* Navigation */}
@@ -577,26 +577,31 @@ const AdminDashboard = () => {
       </div>
       <div className='home-container'>
         <button
+          style={{ backgroundColor: activeView === 'dashboard' ? '#ffcc00' : '' }}
           onClick={() => setActiveView('dashboard')}
         >
           Dashboard
         </button>
         <button
+          style={{ backgroundColor: activeView === 'reservationHistory' ? '#ffcc00' : '' }}
           onClick={() => setActiveView('reservationHistory')}
         >
           Reservation History
         </button>
         <button
+          style={{ backgroundColor: activeView === 'labManagement' ? '#ffcc00' : '' }}
           onClick={() => setActiveView('labManagement')}
         >
           Manage Laboratory
         </button>
         <button
+          style={{ backgroundColor: activeView === 'userManagement' ? '#ffcc00' : '' }}
           onClick={() => setActiveView('userManagement')}
         >
           Manage Users
         </button>
         <button
+          style={{ backgroundColor: activeView === 'logs' ? '#ffcc00' : '' }}
           onClick={() => setActiveView('logs')}
         >
           View Logs
