@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../Pages/supabaseClient';
 import logo from './images/logo.png';
@@ -43,6 +43,8 @@ const AdminDashboard = () => {
   const [hoveredDay, setHoveredDay] = useState(null); // State to track hovered day
 
   const [searchTerm, setSearchTerm] = useState(''); // State for search term
+
+  const searchInputRef = useRef(null); // Create a ref for the search input
 
   useEffect(() => {
     fetchUserData();
@@ -538,27 +540,28 @@ const AdminDashboard = () => {
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
 
-  // Calculate the current reservations to display
-  const indexOfLastReservation = currentReservationPage * reservationsPerPage;
-  const indexOfFirstReservation = indexOfLastReservation - reservationsPerPage;
-  const currentReservations = reservationHistory.slice(indexOfFirstReservation, indexOfLastReservation);
-
-  // Calculate the current logs to display
-  const indexOfLastLog = currentLogPage * logsPerPage;
-  const indexOfFirstLog = indexOfLastLog - logsPerPage;
-  const currentLogs = logs.slice(indexOfFirstLog, indexOfLastLog);
-
-  console.log('Current Logs:', currentLogs); // Log the current logs being rendered
-
-  // Call fetchLogs in useEffect to ensure logs are fetched
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
   // Filter reservations based on search term
   const filteredReservations = reservationHistory.filter((reservation) =>
     reservation.users?.student_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const indexOfLastReservation = currentReservationPage * reservationsPerPage;
+  const indexOfFirstReservation = indexOfLastReservation - reservationsPerPage;
+  const currentReservations = filteredReservations.slice(indexOfFirstReservation, indexOfLastReservation); // Get current reservations
+
+  const handleSearch = () => {
+    setCurrentReservationPage(1); // Reset to the first page
+    if (searchInputRef.current) {
+      searchInputRef.current.focus(); // Focus the search input
+    }
+  };
+
+  // Filter logs based on any criteria if needed
+  const filteredLogs = logs; // Assuming logs is already fetched and available
+
+  const indexOfLastLog = currentLogPage * logsPerPage;
+  const indexOfFirstLog = indexOfLastLog - logsPerPage;
+  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog); // Get current logs
 
   return (
     <div className='main'>
@@ -696,11 +699,13 @@ const AdminDashboard = () => {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
             <input
               type="text"
-              placeholder="Search by Student ID"
+              placeholder="Search by Username"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)} // Update search term on input change
               style={{ padding: '5px', width: '200px' }} // Set a specific width for the search bar
+              ref={searchInputRef} // Attach the ref to the input
             />
+            <button onClick={handleSearch}>Search</button> {/* Call handleSearch on button click */}
           </div>
           <div className='box-container'>
             {currentReservations.length > 0 ? (
@@ -877,10 +882,10 @@ const AdminDashboard = () => {
               <p>No logs available.</p>
             )}
           </div>
-          {/* Pagination Controls */}
+          {/* Pagination Controls for Logs */}
           <div>
             <button onClick={() => setCurrentLogPage(currentLogPage - 1)} disabled={currentLogPage === 1}>Previous</button>
-            <button onClick={() => setCurrentLogPage(currentLogPage + 1)} disabled={indexOfLastLog >= logs.length}>Next</button>
+            <button onClick={() => setCurrentLogPage(currentLogPage + 1)} disabled={indexOfLastLog >= filteredLogs.length}>Next</button>
           </div>
         </div>
       )}
