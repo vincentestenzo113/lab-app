@@ -476,8 +476,17 @@ const AdminDashboard = () => {
         (reservation) => reservation.status === 'afternoon'
       );
 
-      // Determine the status of the day
-      const status = morningReservation || afternoonReservation ? 'reserved' : 'available';
+      // Determine the status of the day based on reservations
+      let status;
+      if (morningReservation && afternoonReservation) {
+        status = 'reserved'; // Both morning and afternoon reserved
+      } else if (morningReservation) {
+        status = 'morning'; // Only morning reserved
+      } else if (afternoonReservation) {
+        status = 'afternoon'; // Only afternoon reserved
+      } else {
+        status = 'available'; // No reservations
+      }
 
       calendarDays.push({
         date: formattedDate,
@@ -596,51 +605,63 @@ const AdminDashboard = () => {
              {/* Calendar View */}
         <h2>Calendar</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
-          {['M', 'T', 'W', 'Th', 'F', 'S', 'Su'].map((day, index) => (
-            <div key={index} style={{ textAlign: 'center', fontWeight: 'bold' }}>
-              {day}
-            </div>
-          ))}
-          {calendar.map((day, index) => (
-            <div
-              key={index}
-              style={{
-                backgroundColor: day.status === 'reserved' ? 'red' : 'white',
-                padding: '10px',
-                border: '1px solid #ccc',
-                textAlign: 'center',
-                position: 'relative', // Position relative for tooltip
-              }}
-              onMouseEnter={() => setHoveredDay(day)} // Set hovered day on mouse enter
-              onMouseLeave={() => setHoveredDay(null)} // Clear hovered day on mouse leave
-            >
-              {day.date ? new Date(day.date).getDate() : ''}
-              {hoveredDay === day && (day.reservations && day.reservations.length > 0) && ( // Check if reservations exist
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
-                  padding: '5px',
-                  borderRadius: '5px',
-                  zIndex: 1,
-                  display: 'flex', // Use flexbox for horizontal layout
-                  flexDirection: 'row', // Arrange items in a row
-                  whiteSpace: 'nowrap', // Prevent wrapping
-                }}>
-                  {day.reservations.map((reservation, idx) => (
-                    <div key={idx} style={{ marginRight: '10px' }}> {/* Add margin for spacing */}
-                      <p style={{ margin: 0 }}>User: {reservation.users.student_id}</p>
-                      <p style={{ margin: 0 }}>Time: {reservation.start_time} - {reservation.end_time}</p>
-                      <p style={{ margin: 0 }}>Room: {reservation.room}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          {calendar.map((day, index) => {
+            let backgroundColor;
+            switch (day.status) {
+              case 'reserved':
+                backgroundColor = 'red'; // Both morning and afternoon reserved
+                break;
+              case 'morning':
+                backgroundColor = 'orange'; // Only morning reserved
+                break;
+              case 'afternoon':
+                backgroundColor = 'yellow'; // Only afternoon reserved
+                break;
+              default:
+                backgroundColor = 'white'; // Available
+            }
+
+            return (
+              <div
+                key={index}
+                style={{
+                  backgroundColor: backgroundColor,
+                  padding: '10px',
+                  border: '1px solid #ccc',
+                  textAlign: 'center',
+                  position: 'relative', // Position relative for tooltip
+                }}
+                onMouseEnter={() => setHoveredDay(day)} // Set hovered day on mouse enter
+                onMouseLeave={() => setHoveredDay(null)} // Clear hovered day on mouse leave
+              >
+                {day.date ? new Date(day.date).getDate() : ''}
+                {hoveredDay === day && (day.reservations && day.reservations.length > 0) && ( // Show tooltip if hovered day has reservations
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    padding: '5px',
+                    borderRadius: '5px',
+                    zIndex: 1,
+                    display: 'flex', // Use flexbox for horizontal layout
+                    flexDirection: 'row', // Arrange items in a row
+                    whiteSpace: 'nowrap', // Prevent wrapping
+                  }}>
+                    {day.reservations.map((reservation, idx) => (
+                      <div key={idx} style={{ marginRight: '10px' }}> {/* Add margin for spacing */}
+                        <p style={{ margin: 0 }}>Student ID: {reservation.users.student_id}</p>
+                        <p style={{ margin: 0 }}>Time: {reservation.start_time} - {reservation.end_time}</p>
+                        <p style={{ margin: 0 }}>Room: {reservation.room}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="bottom-container">
         <div className="month-button">
@@ -652,7 +673,9 @@ const AdminDashboard = () => {
         </div>
         <div>
           <p>Color code:</p>
-          <p style={{ color: 'red' }}>Red - Reserved</p>
+          <p style={{ color: 'red' }}>Red - Whole day reserved</p>
+          <p style={{ color: 'yellow' }}>Yellow - Morning Available</p>
+          <p style={{ color: 'orange' }}>Orange - Afternoon Available</p>
           <p style={{ color: 'white' }}>White - Available</p>
         </div>
         </div>
