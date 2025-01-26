@@ -661,6 +661,7 @@ const AdminDashboard = () => {
           <div className="dashboard-container">
              {/* Calendar View */}
         <h2>Calendar</h2>
+        <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
           {calendar.map((day, index) => {
             let backgroundColor;
@@ -722,7 +723,6 @@ const AdminDashboard = () => {
         </div>
         <div className="bottom-container">
         <div className="month-button">
-          <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
           <div>
           <button onClick={handlePreviousMonth}>Previous</button>
           <button onClick={handleNextMonth}>Next</button>
