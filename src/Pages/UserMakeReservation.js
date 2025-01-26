@@ -172,7 +172,7 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
     <div className="main-container">
       <h2>Make a Reservation</h2>
       {error && <div>{error}</div>}
-      <form onSubmit={handleReservation}>
+      <form onSubmit={handleReservation} className="form">
         <div className="make-container">
           <div>
             <label>Date</label>

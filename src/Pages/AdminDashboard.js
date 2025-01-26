@@ -46,9 +46,15 @@ const AdminDashboard = () => {
 
   const searchInputRef = useRef(null); // Create a ref for the search input
 
+  const [currentRoom1User, setCurrentRoom1User] = useState(null);
+  const [currentRoom2User, setCurrentRoom2User] = useState(null);
+
   useEffect(() => {
     fetchUserData();
     generateCalendar();
+    fetchCurrentRoomUsers();
+    const interval = setInterval(fetchCurrentRoomUsers, 60000); // Poll every minute
+    return () => clearInterval(interval); // Cleanup on unmount
   }, [currentMonth]);
 
   const fetchUserData = async () => {
@@ -563,6 +569,42 @@ const AdminDashboard = () => {
   const indexOfFirstLog = indexOfLastLog - logsPerPage;
   const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog); // Get current logs
 
+  const fetchCurrentRoomUsers = async () => {
+    try {
+      const now = new Date();
+      const nowTime = now.toTimeString().split(' ')[0]; // Extracts 'HH:MM:SS' from the current time
+
+      const { data: room1Data, error: room1Error } = await supabase
+        .from('reservations')
+        .select('users(student_id), start_time, end_time, room')
+        .eq('room', 1)
+        .lte('start_time', nowTime)
+        .gte('end_time', nowTime)
+        .single();
+
+      if (room1Error) {
+        console.error('Error fetching room 1 data:', room1Error);
+        throw room1Error;
+      }
+      
+      console.log('Room 1 data:', room1Data); // Log the fetched data
+      setCurrentRoom1User(room1Data);
+
+      const { data: room2Data, error: room2Error } = await supabase
+        .from('reservations')
+        .select('users(student_id), start_time, end_time, room')
+        .eq('room', 2)
+        .lte('start_time', nowTime)
+        .gte('end_time', nowTime)
+        .single();
+
+      if (room2Error) throw room2Error;
+      setCurrentRoom2User(room2Data);
+    } catch (error) {
+      setError('Error fetching current room users: ' + error.message);
+    }
+  };
+
   return (
     <div className='main'>
 
@@ -688,9 +730,9 @@ const AdminDashboard = () => {
         </div>
         <div>
           <p>Color code:</p>
-          <p style={{ color: 'red' }}>Red - Whole day reserved</p>
-          <p style={{ color: 'yellow' }}>Yellow - Morning Available</p>
-          <p style={{ color: 'orange' }}>Orange - Afternoon Available</p>
+          <p style={{ color: 'red' }}>Red - Whole day Reserved</p>
+          <p style={{ color: 'yellow' }}>Yellow - Afternoon Reserved</p>
+          <p style={{ color: 'orange' }}>Orange - Morning Reserved</p>
           <p style={{ color: 'white' }}>White - Available</p>
         </div>
         </div>
@@ -752,12 +794,15 @@ const AdminDashboard = () => {
             ) : (
               <p>No reservations found.</p> // Message when no reservations match the search
             )}
+            
           </div>
-          {/* Pagination Controls */}
-          <div>
+
+          <div className='button'>
             <button onClick={() => setCurrentReservationPage(currentReservationPage - 1)} disabled={currentReservationPage === 1}>Previous</button>
             <button onClick={() => setCurrentReservationPage(currentReservationPage + 1)} disabled={indexOfLastReservation >= filteredReservations.length}>Next</button>
           </div>
+          
+          {/* Pagination Controls */}
         </div>
       )}
 
@@ -765,34 +810,14 @@ const AdminDashboard = () => {
       {activeView === 'labManagement' && (
         <div className='main-container'>
           <h2>Manage Laboratory Availability</h2>
-          <form onSubmit={handleLabAvailability}>
-            <div className='make-container'>
+          <div className='manage-lab'>
+            <h3>Current Room Usage</h3>
             <div>
-              <label>Date:</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
+              <p>Room 1: {currentRoom1User ? `${currentRoom1User.users.student_id} from ${currentRoom1User.start_time} to ${currentRoom1User.end_time}` : 'No current user'}</p>
+              <p>Room 2: {currentRoom2User ? `${currentRoom2User.users.student_id} from ${currentRoom2User.start_time} to ${currentRoom2User.end_time}` : 'No current user'}</p>
             </div>
-            <div>
-              <label>Start Time:</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-              />
-            </div>
+          </div>
 
-            <button
-              type="submit"
-            >
-              Save Changes
-            </button>
-            </div>
-          </form>
         </div>
       )}
 
@@ -804,7 +829,7 @@ const AdminDashboard = () => {
           {/* Add User Form */}
           
             <h3>Add New User</h3>
-            <form onSubmit={handleAddUser}>
+            <form onSubmit={handleAddUser} className='form'>
             <div className='make-container'>
               <div>
                 <label>Username:</label>
