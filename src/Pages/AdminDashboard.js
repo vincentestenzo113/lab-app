@@ -40,6 +40,8 @@ const AdminDashboard = () => {
   const [currentLogPage, setCurrentLogPage] = useState(1);
   const [logsPerPage] = useState(10); // Set the number of logs per page
 
+  const [hoveredDay, setHoveredDay] = useState(null); // State to track hovered day
+
   useEffect(() => {
     fetchUserData();
     generateCalendar();
@@ -53,7 +55,8 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("reservations")
-        .select("*");
+        .select("*, users(student_id)")
+        .order("date", { ascending: true });
 
       if (error) throw error;
       setMyReservations(data || []);
@@ -462,13 +465,24 @@ const AdminDashboard = () => {
       const date = new Date(year, month, i);
       const formattedDate = date.toISOString().split('T')[0];
 
-      const reservation = myReservations.find(
+      const reservationsForDay = myReservations.filter(
         (reservation) => reservation.date === formattedDate
       );
 
+      const morningReservation = reservationsForDay.find(
+        (reservation) => reservation.status === 'morning'
+      );
+      const afternoonReservation = reservationsForDay.find(
+        (reservation) => reservation.status === 'afternoon'
+      );
+
+      // Determine the status of the day
+      const status = morningReservation || afternoonReservation ? 'reserved' : 'available';
+
       calendarDays.push({
         date: formattedDate,
-        status: reservation ? reservation.status : 'available',
+        status: status,
+        reservations: reservationsForDay, // Store reservations for the day
       });
     }
 
@@ -521,12 +535,14 @@ const AdminDashboard = () => {
   // Calculate the current logs to display
   const indexOfLastLog = currentLogPage * logsPerPage;
   const indexOfFirstLog = indexOfLastLog - logsPerPage;
-
-  // Filter logs to only show "CREATE RESERVATION"
-  const filteredLogs = logs.filter(log => log.message === "CREATE RESERVATION");
-  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
+  const currentLogs = logs.slice(indexOfFirstLog, indexOfLastLog);
 
   console.log('Current Logs:', currentLogs); // Log the current logs being rendered
+
+  // Call fetchLogs in useEffect to ensure logs are fetched
+  useEffect(() => {
+    fetchLogs();
+  }, []);
 
   return (
     <div className='main'>
@@ -589,13 +605,40 @@ const AdminDashboard = () => {
             <div
               key={index}
               style={{
-                backgroundColor: getStatusColor(day.status),
+                backgroundColor: day.status === 'reserved' ? 'red' : 'white',
                 padding: '10px',
                 border: '1px solid #ccc',
                 textAlign: 'center',
+                position: 'relative', // Position relative for tooltip
               }}
+              onMouseEnter={() => setHoveredDay(day)} // Set hovered day on mouse enter
+              onMouseLeave={() => setHoveredDay(null)} // Clear hovered day on mouse leave
             >
               {day.date ? new Date(day.date).getDate() : ''}
+              {hoveredDay === day && (day.reservations && day.reservations.length > 0) && ( // Check if reservations exist
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '5px',
+                  borderRadius: '5px',
+                  zIndex: 1,
+                  display: 'flex', // Use flexbox for horizontal layout
+                  flexDirection: 'row', // Arrange items in a row
+                  whiteSpace: 'nowrap', // Prevent wrapping
+                }}>
+                  {day.reservations.map((reservation, idx) => (
+                    <div key={idx} style={{ marginRight: '10px' }}> {/* Add margin for spacing */}
+                      <p style={{ margin: 0 }}>User: {reservation.users.student_id}</p>
+                      <p style={{ margin: 0 }}>Time: {reservation.start_time} - {reservation.end_time}</p>
+                      <p style={{ margin: 0 }}>Room: {reservation.room}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -610,7 +653,6 @@ const AdminDashboard = () => {
         <div>
           <p>Color code:</p>
           <p style={{ color: 'red' }}>Red - Reserved</p>
-          <p style={{ color: 'yellow' }}>Yellow - Pending</p>
           <p style={{ color: 'white' }}>White - Available</p>
         </div>
         </div>
@@ -784,8 +826,8 @@ const AdminDashboard = () => {
             {currentLogs.length > 0 ? (
               currentLogs.map((log) => (
                 <div key={log.id}>
-                  <p>Message: {log.message}</p>
-                  <p>Timestamp: {new Date().toLocaleString()}</p>
+                  <p>Description: {log.description || 'No description available'}</p>
+                  <p>Timestamp: {new Date(log.created_at).toLocaleString()}</p>
                 </div>
               ))
             ) : (
@@ -795,7 +837,7 @@ const AdminDashboard = () => {
           {/* Pagination Controls */}
           <div>
             <button onClick={() => setCurrentLogPage(currentLogPage - 1)} disabled={currentLogPage === 1}>Previous</button>
-            <button onClick={() => setCurrentLogPage(currentLogPage + 1)} disabled={indexOfLastLog >= filteredLogs.length}>Next</button>
+            <button onClick={() => setCurrentLogPage(currentLogPage + 1)} disabled={indexOfLastLog >= logs.length}>Next</button>
           </div>
         </div>
       )}
