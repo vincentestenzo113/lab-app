@@ -705,7 +705,6 @@ const AdminDashboard = () => {
               style={{ padding: '5px', width: '200px' }} // Set a specific width for the search bar
               ref={searchInputRef} // Attach the ref to the input
             />
-            <button onClick={handleSearch}>Search</button> {/* Call handleSearch on button click */}
           </div>
           <div className='box-container'>
             {currentReservations.length > 0 ? (
