@@ -515,7 +515,6 @@ button:hover {
   height: 40vh;
   flex-direction: column;
   text-align: start;
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .manage-lab h3 {
