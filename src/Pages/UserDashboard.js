@@ -273,24 +273,31 @@ const UserDashboard = () => {
               (reservation) => reservation.user_id !== userId
             );
 
-            const reservationTimes = reservationsForDay.map(reservation => 
-              `${formatTime(reservation.start_time)} - ${formatTime(reservation.end_time)}`
-            ).join(', '); // Join times for tooltip
-
             // Modify tooltip content based on reservation status
             let tooltipContent = '';
-            if (morningReservation && afternoonReservation) {
-              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved), ${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show both morning and afternoon times with reserved text
-            } else if (morningReservation && cancelledReservation) {
-              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved)`; // Show morning time with reserved text
-            } else if (afternoonReservation && cancelledReservation) {
-              tooltipContent = `${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show afternoon time with reserved and cancelled text
-            } else if (morningReservation) {
-              tooltipContent = `${formatTime(morningReservation.start_time)} - ${formatTime(morningReservation.end_time)} (reserved)`; // Show morning time with reserved text
-            } else if (afternoonReservation) {
-              tooltipContent = `${formatTime(afternoonReservation.start_time)} - ${formatTime(afternoonReservation.end_time)} (reserved)`; // Show afternoon time with reserved text
+            const morningRooms = reservationsForDay
+              .filter(reservation => reservation.status === 'morning')
+              .map(reservation => reservation.user_id === userId ? `Room ${reservation.room} (You)` : `Room ${reservation.room} (Other users)`)
+              .join(', ');
+
+            const afternoonRooms = reservationsForDay
+              .filter(reservation => reservation.status === 'afternoon')
+              .map(reservation => reservation.user_id === userId ? `Room ${reservation.room} (You)` : `Room ${reservation.room} (Other users)`)
+              .join(', ');
+
+            if (morningRooms || afternoonRooms) {
+              tooltipContent = (
+                <div>
+                  {morningRooms && <div>Morning: {morningRooms}</div>}
+                  {afternoonRooms && <div>Afternoon: {afternoonRooms}</div>}
+                </div>
+              );
             } else if (cancelledReservation) {
-              tooltipContent = `${formatTime(cancelledReservation.start_time)} - ${formatTime(cancelledReservation.end_time)} (cancelled)`; // Show cancelled time with cancelled text
+              tooltipContent = (
+                <div>
+                  {`${formatTime(cancelledReservation.start_time)} - ${formatTime(cancelledReservation.end_time)} (cancelled, Room ${cancelledReservation.room})`}
+                </div>
+              );
             }
 
             return (
@@ -298,7 +305,7 @@ const UserDashboard = () => {
                 key={index}
                 onClick={() => day.date && handleDayClick(day.date)}
                 style={{
-                  backgroundColor: hasOtherUserReservations ? 'gray' : getStatusColor(day.status),
+                  backgroundColor: (morningReservation || afternoonReservation) ? getStatusColor(day.status) : (hasOtherUserReservations ? 'gray' : 'white'),
                   padding: '10px',
                   border: '1px solid #ccc',
                   textAlign: 'center',
@@ -321,92 +328,16 @@ const UserDashboard = () => {
                 }}
               >
                 {day.date ? new Date(day.date).getDate() : ''}
-                {morningReservation && afternoonReservation ? (
+                {(morningRooms || afternoonRooms) && (
                   <div>
-                    <IoCheckmarkDoneSharp style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'green' 
-                    }} />
-                    {morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
-                    {afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                    {morningRooms && <IoCheckmarkSharp style={{ position: 'absolute', right: '0', bottom: '0', margin: '1px', fontSize: '1em', color: 'green' }} />}
+                    {afternoonRooms && <IoCheckmarkSharp style={{ position: 'absolute', right: '0', bottom: '0', margin: '1px', fontSize: '1em', color: 'green' }} />}
+                    {morningRooms.includes('Room 1') && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {morningRooms.includes('Room 2') && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                    {afternoonRooms.includes('Room 1') && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
+                    {afternoonRooms.includes('Room 2') && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
                   </div>
-                ) : morningReservation && cancelledReservation ? (
-                  <div>
-                    <IoCheckmarkSharp style={{ 
-                      position: 'absolute', 
-                      right: '10px', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'green' 
-                    }} />
-                    <IoClose style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'red'
-                    }} />
-                    {morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                  </div>
-                ) : afternoonReservation && cancelledReservation ? (
-                  <div>
-                    <IoClose style={{ 
-                      position: 'absolute', 
-                      right: '10px', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'red'
-                    }} />
-                    <IoCheckmarkSharp style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'green' 
-                    }} />
-                    {afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                  </div>
-                ) : morningReservation || afternoonReservation ? (
-                  <div>
-                    {morningReservation && morningReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {morningReservation && morningReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {afternoonReservation && afternoonReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {afternoonReservation && afternoonReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    <IoCheckmarkSharp style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'green' 
-                    }} />
-                  </div>
-                ) : cancelledReservation ? (
-                  <div>
-                    <IoClose style={{ 
-                      position: 'absolute', 
-                      right: '0', 
-                      bottom: '0', 
-                      margin: '1px', 
-                      fontSize: '1em',
-                      color: 'red'
-                    }} />
-                    {cancelledReservation.room === 1 && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                    {cancelledReservation.room === 2 && <Bs2CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
-                  </div>
-                ) : null}
+                )}
               </div>
             );
           })}

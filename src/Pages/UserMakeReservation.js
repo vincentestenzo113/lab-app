@@ -58,13 +58,26 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
     try {
       const userId = localStorage.getItem("userId");
 
-      // Fetch existing reservations for the selected date and room
+      // Determine the status based on the selected start time
+      const status = startTime === "08:00" ? "morning" : "afternoon";
+
+      // Fetch existing reservations for the selected date, status, and room
       const { data: existingReservations, error: fetchError } = await supabase
         .from("reservations")
         .select("date, start_time, room, status") // Fetch status to check for cancellations
-        .eq("date", date); // Check for all users on the specific date
+        .eq("date", date)
+        .eq("status", status)
+        .eq("room", room); // Check for all users on the specific date, status, and room
 
       if (fetchError) throw fetchError;
+
+      // Check if any reservation exists with the same date, status, and room
+      const isReserved = existingReservations.length > 0;
+
+      if (isReserved) {
+        setError("The selected date, time, and room are already reserved. Please choose another time or room.");
+        return;
+      }
 
       // Determine selected start time and end time based on user choice
       let selectedStartTime;
@@ -84,15 +97,13 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
 
       const selectedEndTime = new Date(selectedStartTime.getTime() + 60 * 60 * 1000); // 1 hour duration
 
-      const isReserved = existingReservations.some(reservation => {
-        const reservationStartTime = new Date(`${date}T${reservation.start_time}`);
-        const reservationEndTime = new Date(reservationStartTime.getTime() + 60 * 60 * 1000); // 1 hour duration
-        // Check for overlapping reservations in the same room
-        return (selectedStartTime < reservationEndTime && selectedEndTime > reservationStartTime && reservation.status !== 'cancelled' && reservation.room === room);
+      // Check if the current user or any user has a reservation with the same date, status, and room
+      const isUserAlreadyReserved = existingReservations.some(reservation => {
+        return reservation.user_id === userId && reservation.date === date && reservation.status === status && reservation.room === room;
       });
 
-      if (isReserved) {
-        setError("This time slot is already reserved by another user. Please choose another time or room.");
+      if (isUserAlreadyReserved) {
+        setError("You already have a reservation for this date, time, and room, or the slot is taken by another user. Please choose another time or room.");
         return;
       }
 
