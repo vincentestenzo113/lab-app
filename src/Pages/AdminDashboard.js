@@ -33,14 +33,16 @@ const AdminDashboard = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
 
   const [currentUserPage, setCurrentUserPage] = useState(1);
-  const [usersPerPage] = useState(10); // Set the number of users per page
+  const [usersPerPage] = useState(3); // Set the number of users per page
   const [currentReservationPage, setCurrentReservationPage] = useState(1);
-  const [reservationsPerPage] = useState(10); // Set the number of reservations per page
+  const [reservationsPerPage] = useState(3); // Set the number of reservations per page
 
   const [currentLogPage, setCurrentLogPage] = useState(1);
-  const [logsPerPage] = useState(10); // Set the number of logs per page
+  const [logsPerPage] = useState(3); // Set the number of logs per page
 
   const [hoveredDay, setHoveredDay] = useState(null); // State to track hovered day
+
+  const [searchTerm, setSearchTerm] = useState(''); // State for search term
 
   useEffect(() => {
     fetchUserData();
@@ -553,6 +555,11 @@ const AdminDashboard = () => {
     fetchLogs();
   }, []);
 
+  // Filter reservations based on search term
+  const filteredReservations = reservationHistory.filter((reservation) =>
+    reservation.users?.student_id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className='main'>
 
@@ -652,7 +659,7 @@ const AdminDashboard = () => {
                   }}>
                     {day.reservations.map((reservation, idx) => (
                       <div key={idx} style={{ marginRight: '10px' }}> {/* Add margin for spacing */}
-                        <p style={{ margin: 0 }}>Student ID: {reservation.users.student_id}</p>
+                        <p style={{ margin: 0 }}>Username: {reservation.users.student_id}</p>
                         <p style={{ margin: 0 }}>Time: {reservation.start_time} - {reservation.end_time}</p>
                         <p style={{ margin: 0 }}>Room: {reservation.room}</p>
                       </div>
@@ -686,48 +693,61 @@ const AdminDashboard = () => {
       {activeView === 'reservationHistory' && (
         <div className='main-container'>
           <h2>Reservation History</h2>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+            <input
+              type="text"
+              placeholder="Search by Student ID"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)} // Update search term on input change
+              style={{ padding: '5px', width: '200px' }} // Set a specific width for the search bar
+            />
+          </div>
           <div className='box-container'>
-            {currentReservations.map((reservation) => (
-              <div key={reservation.id}>
-                <div>
+            {currentReservations.length > 0 ? (
+              currentReservations.map((reservation) => (
+                <div key={reservation.id}>
                   <div>
-                    <p>User: {reservation.users?.student_id}</p>
-                    <p>Room: {reservation.room}</p>
-                    <p>Date: {reservation.date}</p>
-                    <p>Time: {reservation.start_time} - {reservation.end_time}</p>
-                    <p>
-                      Status: {reservation.status}
-                    </p>
-                  </div>
-                  <div className='admin-button'>
-                    {reservation.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleAcceptReservation(reservation.id)}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleDeclineReservation(reservation.id)}
-                        >
-                          Decline
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleDeleteReservation(reservation.id)}
-                    >
-                      Delete
-                    </button>
+                    <div>
+                      <p>Username: {reservation.users?.student_id}</p>
+                      <p>Room: {reservation.room}</p>
+                      <p>Date: {reservation.date}</p>
+                      <p>Time: {reservation.start_time} - {reservation.end_time}</p>
+                      <p>
+                        Status: {reservation.status}
+                      </p>
+                    </div>
+                    <div className='admin-button'>
+                      {reservation.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleAcceptReservation(reservation.id)}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleDeclineReservation(reservation.id)}
+                          >
+                            Decline
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDeleteReservation(reservation.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>No reservations found.</p> // Message when no reservations match the search
+            )}
           </div>
           {/* Pagination Controls */}
-          <div class="history-button">
+          <div>
             <button onClick={() => setCurrentReservationPage(currentReservationPage - 1)} disabled={currentReservationPage === 1}>Previous</button>
-            <button onClick={() => setCurrentReservationPage(currentReservationPage + 1)} disabled={indexOfLastReservation >= reservationHistory.length}>Next</button>
+            <button onClick={() => setCurrentReservationPage(currentReservationPage + 1)} disabled={indexOfLastReservation >= filteredReservations.length}>Next</button>
           </div>
         </div>
       )}
