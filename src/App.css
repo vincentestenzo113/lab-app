@@ -320,15 +320,6 @@ button:hover {
   margin: 10px;
 }
 
-.month-button {
-  flex-grow: 12;
-  text-align: center;
-  margin-right: -100px;
-  font-size: 30px;
-  display: flex;
-  flex-direction: column;
-}
-
 .month-button button{
   background-color: #febd00;
   border-radius: 10px;
@@ -347,6 +338,10 @@ button:hover {
   margin-top: 20px;
   background-color: #720000;
   color: white;
+}
+
+.bottom-container div {
+  flex-grow: 1;
 }
 
 .profile-img {
@@ -389,7 +384,7 @@ button:hover {
 }
 
 .make-container input {
-  width: 150px;
+  width: 200px;
   border: 1px solid #febd00;
   cursor: pointer;
 }
@@ -409,7 +404,7 @@ button:hover {
 }
 
 .make-container select {
-  width: 150px;
+  width: 200px;
   border: 1px solid #febd00;
   cursor: pointer;
 }

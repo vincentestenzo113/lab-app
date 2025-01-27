@@ -202,8 +202,9 @@ const UserMakeReservation = ({ onReservationSuccess }) => {
               onChange={(e) => setRoom(e.target.value)}
               required
             >
-              <option value="1">Room 1</option>
-              <option value="2">Room 2</option>
+              <option value="1">Computer lab 1 - WAC 212</option>
+              <option value="2">Computer lab 2 - WAC 213</option>
+              <option value="3">Computer lab 3 - NAC 303</option>
             </select>
           </div>
           <button type="submit">Make Reservation</button>

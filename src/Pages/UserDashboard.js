@@ -4,7 +4,7 @@ import { supabase } from "../Pages/supabaseClient";
 import profile from './images/profile.jpg';
 import logo from './images/logo.png';
 import { IoCheckmarkSharp, IoCheckmarkDoneSharp, IoClose } from 'react-icons/io5';
-import { Bs1CircleFill, Bs2CircleFill } from 'react-icons/bs';
+import { Bs1CircleFill, Bs2CircleFill, Bs3CircleFill } from 'react-icons/bs';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -288,8 +288,8 @@ const UserDashboard = () => {
             if (morningRooms || afternoonRooms) {
               tooltipContent = (
                 <div>
-                  {morningRooms && <div>Morning: {morningRooms}</div>}
-                  {afternoonRooms && <div>Afternoon: {afternoonRooms}</div>}
+                  {morningRooms && <div>8:00am - 12:00pm: {morningRooms}</div>}
+                  {afternoonRooms && <div>1:00pm - 5:00pm: {afternoonRooms}</div>}
                 </div>
               );
             } else if (cancelledReservation) {
@@ -334,8 +334,10 @@ const UserDashboard = () => {
                     {afternoonRooms && <IoCheckmarkSharp style={{ position: 'absolute', right: '0', bottom: '0', margin: '1px', fontSize: '1em', color: 'green' }} />}
                     {morningRooms.includes('Room 1') && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
                     {morningRooms.includes('Room 2') && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                    {morningRooms.includes('Room 3') && <Bs3CircleFill style={{ position: 'absolute', left: '38px', top: '2px', color: 'blue' }} />}
                     {afternoonRooms.includes('Room 1') && <Bs1CircleFill style={{ position: 'absolute', left: '2px', top: '2px', color: 'blue' }} />}
                     {afternoonRooms.includes('Room 2') && <Bs2CircleFill style={{ position: 'absolute', left: '20px', top: '2px', color: 'blue' }} />}
+                    {afternoonRooms.includes('Room 3') && <Bs3CircleFill style={{ position: 'absolute', left: '38px', top: '2px', color: 'blue' }} />}
                   </div>
                 )}
               </div>
@@ -348,7 +350,13 @@ const UserDashboard = () => {
           <button onClick={handlePreviousMonth}>Previous</button>
           <button onClick={handleNextMonth}>Next</button>
           </div>
-        </div>
+          </div>
+        <div>
+            <p>Rooms</p>
+            <p>Room 1 = Computer lab 1 - WAC 212</p>
+            <p>Room 2 = Computer lab 2 - WAC 213</p>
+            <p>Room 3 = Computer lab 3 - NAC 303</p>
+          </div>
         <div>
           <p>Color code Reservation:</p>
           <p style={{ color: 'orange' }}>Orange - Morning</p>

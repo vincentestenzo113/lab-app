@@ -729,6 +729,12 @@ const AdminDashboard = () => {
           </div>
         </div>
         <div>
+            <p>Rooms</p>
+            <p>Room 1 = Computer lab 1 - WAC 212</p>
+            <p>Room 2 = Computer lab 2 - WAC 213</p>
+            <p>Room 3 = Computer lab 3 - NAC 303</p>
+          </div>
+        <div>
           <p>Color code:</p>
           <p style={{ color: 'red' }}>Red - Whole day Reserved</p>
           <p style={{ color: 'yellow' }}>Yellow - Afternoon Reserved</p>
