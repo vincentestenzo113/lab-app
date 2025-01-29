@@ -75,70 +75,70 @@ credentials are invalid`);
         <img src={logo}></img>
       </div>
       <div className="image-container">
-         <img src={background} className="background-image" alt="Background" />
-       </div>
-
-<div className='home'>
-
-      <div className='sign-title'>
-        <h2>
-          Log in
-        </h2>
-        <p>
-          Please sign in to continue
-        </p>
+        <div className="gradient-overlay"></div>
+        <img src={background} className="background-image" alt="Background" />
       </div>
-      
-      <form onSubmit={handleLogin} className='form-container'>
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-        <div className="input-group">
-          <div className="input-field">
-            <label htmlFor="student-id">
-              User ID
-            </label>
-            <input
-              id="student-id"
-              name="student-id"
-              type="text"
-              required
-              placeholder="User ID"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="input"
-            />
-          </div>
-          <div className="input-field">
-            <label htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-            />
-          </div>
-        </div>
 
-        <div className="button-container">
-          <button
-            type="submit"
-            disabled={loading}
-            className="submit-button"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
+      <div className='home'>
+        <div className='sign-title'>
+          <h2>
+            Log in
+          </h2>
+          <p>
+            Please sign in to continue
+          </p>
         </div>
-      </form>
-    </div>
+        
+        <form onSubmit={handleLogin} className='form-container'>
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+          <div className="input-group">
+            <div className="input-field">
+              <label htmlFor="student-id">
+                User ID
+              </label>
+              <input
+                id="student-id"
+                name="student-id"
+                type="text"
+                required
+                placeholder="User ID"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                className="input"
+              />
+            </div>
+            <div className="input-field">
+              <label htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+              />
+            </div>
+          </div>
+
+          <div className="button-container">
+            <button
+              type="submit"
+              disabled={loading}
+              className="submit-button"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

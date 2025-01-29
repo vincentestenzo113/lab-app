@@ -57,13 +57,14 @@ button:hover {
 
 .home {
   display: flex;
-  flex-grow: 6;
+  flex-grow: 2;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   height: auto;
-  width: 120%;
+  width: 40%;
   background-color: #720000;
+  padding: 70px;
 };
 
 .form-container {
@@ -519,4 +520,15 @@ button:hover {
 
 .manage-lab div {
   margin-bottom: 100px;
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to left, rgba(114, 0, 0, 1), rgba(0, 0, 0, 0));
+  z-index: 1;
+  pointer-events: none;
 }

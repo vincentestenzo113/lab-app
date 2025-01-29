@@ -311,17 +311,18 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeactivateAccount = async (userId) => {
-    if (window.confirm('Are you sure you want to deactivate this account?')) {
+  const handleDeactivateAccount = async (userId, isActive) => {
+    const action = isActive ? 'deactivate' : 'activate';
+    if (window.confirm(`Are you sure you want to ${action} this account?`)) {
       try {
         const { error } = await supabase
           .from('users')
-          .update({ is_active: false })
+          .update({ is_active: !isActive })
           .eq('id', userId);
         if (error) throw error;
         fetchUsers();
       } catch (error) {
-        setError('Error deactivating account: ' + error.message);
+        setError(`Error ${action}ing account: ` + error.message);
       }
     }
   };
@@ -884,7 +885,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className='admin-button'>
                     <button
-                      onClick={() => handleDeactivateAccount(user.id)}
+                      onClick={() => handleDeactivateAccount(user.id, user.is_active)}
                     >
                       {user.is_active ? 'Deactivate' : 'Activate'}
                     </button>
